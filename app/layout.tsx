@@ -10,7 +10,15 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "DSR GROUP MANDSAUR",
   description: "Financial analytics and payment performance solutions",
-    generator: 'v0.dev'
+  icons: {
+    icon: [
+      { url: '/logo.png' },
+      { url: '/logo.png', sizes: '32x32' }
+    ],
+    apple: { url: '/logo.png' },
+    shortcut: { url: '/logo.png' }
+  },
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -30,7 +38,5 @@ export default function RootLayout({
     </html>
   )
 }
-
-
 
 import './globals.css'

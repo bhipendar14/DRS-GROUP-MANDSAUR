@@ -1,0 +1,914 @@
+"use client"
+
+import { useTheme } from "@/context/theme-context"
+import { NavBar } from "@/components/nav-bar"
+import { Footer } from "@/components/footer"
+import { ChevronRight, Award, Coffee, Heart, Clock, MapPin, DollarSign, Zap, Calendar, Globe, Check, Smile, Send, AlertCircle } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+import { useState } from "react"
+
+export default function CareersPage() {
+  const { theme } = useTheme()
+  const [activeJobId, setActiveJobId] = useState(1)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    position: "",
+    experience: "",
+    resume: null as File | null,
+    message: ""
+  })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+    
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required"
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters"
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email) {
+      newErrors.email = "Email is required"
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+    
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/
+    if (!formData.phone) {
+      newErrors.phone = "Phone number is required"
+    } else if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Please enter a valid 10-digit phone number"
+    }
+    
+    // Position validation
+    if (!formData.position) {
+      newErrors.position = "Please select a position"
+    }
+    
+    // Experience validation
+    if (!formData.experience) {
+      newErrors.experience = "Years of experience is required"
+    }
+    
+    // Resume validation
+    if (!formData.resume) {
+      newErrors.resume = "Resume is required"
+    } else {
+      const fileSize = formData.resume.size / 1024 / 1024 // in MB
+      const fileType = formData.resume.type
+      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      
+      if (fileSize > 5) {
+        newErrors.resume = "File size must be less than 5MB"
+      } else if (!validTypes.includes(fileType)) {
+        newErrors.resume = "Only PDF, DOC, or DOCX files are accepted"
+      }
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData({
+      ...formData,
+      [name]: value
+    })
+    
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: ""
+      })
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData({
+        ...formData,
+        resume: e.target.files[0]
+      })
+      
+      // Clear error when user selects a file
+      if (errors.resume) {
+        setErrors({
+          ...errors,
+          resume: ""
+        })
+      }
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      return
+    }
+    
+    setIsSubmitting(true)
+    
+    try {
+      // Create FormData for file upload
+      const submissionData = new FormData()
+      submissionData.append('name', formData.name)
+      submissionData.append('email', formData.email)
+      submissionData.append('phone', formData.phone)
+      submissionData.append('position', formData.position)
+      submissionData.append('experience', formData.experience)
+      submissionData.append('message', formData.message)
+      if (formData.resume) {
+        submissionData.append('resume', formData.resume)
+      }
+      
+      // Send to API endpoint
+      const response = await fetch('/api/submit-application', {
+        method: 'POST',
+        body: submissionData
+      })
+      
+      if (response.ok) {
+        // Show success message
+        setSubmitSuccess(true)
+        
+        // Reset form after success
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          position: "",
+          experience: "",
+          resume: null,
+          message: ""
+        })
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          setSubmitSuccess(false)
+        }, 5000)
+      } else {
+        throw new Error('Failed to submit application')
+      }
+    } catch (error) {
+      console.error('Error submitting application:', error)
+      alert('There was an error submitting your application. Please try again later.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Sample job openings
+  const jobOpenings = [
+    {
+      id: 1,
+      title: "Senior Equity Research Analyst",
+      department: "Research",
+      location: "Mumbai",
+      type: "Full-time",
+      experience: "5-8 years",
+      description: "We're looking for an experienced Equity Research Analyst to join our research team. The ideal candidate will have strong analytical skills and deep knowledge of Indian equity markets.",
+      responsibilities: [
+        "Conduct in-depth research and analysis on assigned sectors and companies",
+        "Develop financial models to forecast company performance",
+        "Prepare detailed research reports with investment recommendations",
+        "Interact with company management teams and industry experts",
+        "Present investment ideas to portfolio managers and clients"
+      ],
+      requirements: [
+        "5-8 years of experience in equity research or related field",
+        "CFA or MBA in Finance from a reputed institution",
+        "Strong understanding of financial statements and valuation methodologies",
+        "Excellent analytical and critical thinking skills",
+        "Outstanding written and verbal communication abilities"
+      ]
+    },
+    {
+      id: 2,
+      title: "Derivatives Trader",
+      department: "Trading",
+      location: "Delhi",
+      type: "Full-time",
+      experience: "3-5 years",
+      description: "Join our trading desk as a Derivatives Trader specializing in options and futures. You'll be responsible for executing trading strategies to maximize returns while managing risk.",
+      responsibilities: [
+        "Execute trading strategies for proprietary desk and client accounts",
+        "Monitor market conditions to identify trading opportunities",
+        "Analyze option pricing and volatility patterns",
+        "Develop and implement risk management strategies",
+        "Stay updated on market events affecting derivatives markets"
+      ],
+      requirements: [
+        "3-5 years of experience trading derivatives products",
+        "Strong understanding of options pricing and Greeks",
+        "Experience with trading platforms and analytical tools",
+        "Ability to perform under pressure in fast-paced environments",
+        "Excellent risk management skills"
+      ]
+    },
+    {
+      id: 3,
+      title: "Full Stack Developer",
+      department: "Technology",
+      location: "Bangalore",
+      type: "Full-time",
+      experience: "2-4 years",
+      description: "We're seeking a talented Full Stack Developer to help build and maintain our trading platforms and client-facing applications.",
+      responsibilities: [
+        "Develop and maintain front-end and back-end components of our trading platforms",
+        "Optimize applications for maximum speed and scalability",
+        "Build reusable code and libraries for future use",
+        "Collaborate with cross-functional teams to define and implement new features",
+        "Ensure the technical feasibility of UI/UX designs"
+      ],
+      requirements: [
+        "2-4 years of experience in full stack development",
+        "Proficiency in React, Node.js, and TypeScript",
+        "Experience with RESTful APIs and microservices architecture",
+        "Knowledge of database technologies (SQL and NoSQL)",
+        "Understanding of financial market data structures (preferred)"
+      ]
+    },
+    {
+      id: 4,
+      title: "Relationship Manager",
+      department: "Sales",
+      location: "Mumbai",
+      type: "Full-time",
+      experience: "3-6 years",
+      description: "We're looking for a Relationship Manager to join our growing sales team. The ideal candidate will have excellent people skills and a passion for financial markets.",
+      responsibilities: [
+        "Acquire and manage a portfolio of high-net-worth clients",
+        "Understand client investment needs and recommend suitable products",
+        "Conduct regular portfolio reviews and client meetings",
+        "Achieve defined sales targets and business metrics",
+        "Stay updated on market trends and product offerings"
+      ],
+      requirements: [
+        "3-6 years of experience in financial sales or relationship management",
+        "Strong network and proven track record in client acquisition",
+        "Excellent communication and interpersonal skills",
+        "NISM/AMFI certifications",
+        "Good understanding of investment products and markets"
+      ]
+    }
+  ]
+
+  const activeJob = jobOpenings.find(job => job.id === activeJobId) || jobOpenings[0]
+
+  return (
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-white text-gray-800' : 'bg-gray-950 text-gray-200'}`}>
+      <NavBar />
+
+      {/* Hero Section */}
+      <section className={`relative overflow-hidden py-20 px-4 ${
+        theme === 'light' 
+          ? 'bg-gradient-to-r from-green-50 to-emerald-50' 
+          : 'bg-gradient-to-r from-green-950 to-emerald-950'
+      }`}>
+        <div className="absolute inset-0 opacity-20">
+          {/* Abstract pattern */}
+          <div className="absolute right-0 bottom-0 w-1/2 h-1/2">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              <path fill={theme === 'light' ? '#10B981' : '#065F46'} d="M45.7,-51.9C59.1,-41.3,70,-25.4,71.8,-8.5C73.7,8.5,66.4,26.4,53.9,37.5C41.3,48.5,23.4,52.8,4.4,49.2C-14.6,45.7,-35,34.4,-48.2,16.8C-61.5,-0.8,-67.7,-24.6,-59.8,-39.5C-51.9,-54.4,-30.2,-60.4,-10.2,-55.3C9.8,-50.2,32.3,-34.1,45.7,-51.9Z" transform="translate(100 100)" />
+            </svg>
+          </div>
+        </div>
+        
+        <div className="container mx-auto relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+            <div>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-4 ${
+                theme === 'light' ? 'bg-green-100 text-green-800' : 'bg-green-900/60 text-green-300'
+              }`}>
+                Join Our Team
+              </span>
+              <h1 className={`text-4xl md:text-5xl font-bold mb-6 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                Grow Your Career<br/>With DSR Group MANDSAUR
+              </h1>
+              <p className="text-lg mb-8 leading-relaxed">
+                Join a team of passionate professionals in the financial markets. We offer exciting opportunities for growth, learning, and innovation in a dynamic environment.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a href="#openings" className={`py-3 px-8 rounded-lg font-medium transition-all ${
+                  theme === 'light' 
+                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                    : 'bg-green-700 text-white hover:bg-green-600'
+                }`}>
+                  View Open Positions
+                </a>
+                <a href="#culture" className={`py-3 px-8 rounded-lg font-medium transition-all flex items-center justify-center ${
+                  theme === 'light' 
+                    ? 'bg-white text-green-600 hover:bg-gray-100 border border-green-200' 
+                    : 'bg-gray-800 text-green-400 hover:bg-gray-700 border border-gray-700'
+                }`}>
+                  Our Culture <ChevronRight size={18} className="ml-1" />
+                </a>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <div className={`relative rounded-xl overflow-hidden shadow-xl ${
+                theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}>
+                <Image 
+                  src="/assets/careers-hero.jpg" 
+                  width={600} 
+                  height={400}
+                  alt="Team collaboration at DSR Group"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Company Culture Section */}
+      <section id="culture" className="py-16 px-4">
+        <div className="container mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className={`text-3xl font-bold mb-6 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+              Our Culture & Values
+            </h2>
+            <p className="text-lg">
+              At DSR Group, we're building a workplace where talent thrives, innovation is encouraged, and excellence is the standard. Our culture is the foundation of our success.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                icon: <Award className={theme === 'light' ? 'text-green-600' : 'text-green-400'} />,
+                title: "Excellence",
+                description: "We strive for excellence in everything we do, from market analysis to client service."
+              },
+              {
+                icon: <Heart className={theme === 'light' ? 'text-green-600' : 'text-green-400'} />,
+                title: "Integrity",
+                description: "We operate with the highest standards of ethics and transparency in all our dealings."
+              },
+              {
+                icon: <Zap className={theme === 'light' ? 'text-green-600' : 'text-green-400'} />,
+                title: "Innovation",
+                description: "We continuously innovate to stay ahead in the ever-evolving financial markets."
+              },
+              {
+                icon: <Coffee className={theme === 'light' ? 'text-green-600' : 'text-green-400'} />,
+                title: "Collaboration",
+                description: "We believe in the power of teamwork and collaborative problem-solving."
+              },
+              {
+                icon: <Smile className={theme === 'light' ? 'text-green-600' : 'text-green-400'} />,
+                title: "Work-Life Balance",
+                description: "We value the importance of balancing professional excellence with personal well-being."
+              },
+              {
+                icon: <Globe className={theme === 'light' ? 'text-green-600' : 'text-green-400'} />,
+                title: "Growth Mindset",
+                description: "We foster continuous learning and development for personal and professional growth."
+              }
+            ].map((value, index) => (
+              <div key={index} className={`p-6 rounded-xl ${
+                theme === 'light' ? 'bg-white border border-gray-100 shadow-sm' : 'bg-gray-800 border border-gray-700'
+              }`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+                  theme === 'light' ? 'bg-green-100' : 'bg-green-900/30'
+                }`}>
+                  {value.icon}
+                </div>
+                <h3 className={`text-xl font-bold mb-3 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                  {value.title}
+                </h3>
+                <p>
+                  {value.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className={`py-16 px-4 ${
+        theme === 'light' ? 'bg-gray-50' : 'bg-gray-900'
+      }`}>
+        <div className="container mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className={`text-3xl font-bold mb-6 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+              Employee Benefits
+            </h2>
+            <p className="text-lg">
+              At DSR Group, we offer a comprehensive range of benefits to ensure our employees' well-being and growth.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className="md:col-span-1 order-2 md:order-1">
+              <div className={`h-full rounded-xl overflow-hidden ${
+                theme === 'light' ? 'bg-white border border-gray-100 shadow-sm' : 'bg-gray-800 border border-gray-700'
+              }`}>
+                <h3 className={`text-xl font-bold p-6 border-b ${
+                  theme === 'light' ? 'border-gray-100' : 'border-gray-700'
+                }`}>
+                  Financial Benefits
+                </h3>
+                <div className="p-6">
+                  {[
+                    "Comprehensive health insurance for you and your family",
+                    "Retirement plans with company matching",
+                    "Performance-based bonuses",
+                    "Stock options and employee stock purchase plans",
+                    "Education assistance and professional development allowance",
+                    "Mental health support and wellness programs"
+                  ].map((benefit, index) => (
+                    <div key={index} className="flex items-start mb-4">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center mt-1 mr-3 ${
+                        theme === 'light' ? 'bg-green-100 text-green-600' : 'bg-green-900/30 text-green-400'
+                      }`}>
+                        <Check size={12} />
+                      </div>
+                      <span>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="md:col-span-1 order-1 md:order-2">
+              <div className={`h-full rounded-xl overflow-hidden ${
+                theme === 'light' ? 'bg-white border border-gray-100 shadow-sm' : 'bg-gray-800 border border-gray-700'
+              }`}>
+                <h3 className={`text-xl font-bold p-6 border-b ${
+                  theme === 'light' ? 'border-gray-100' : 'border-gray-700'
+                }`}>
+                  Work Perks
+                </h3>
+                <div className="p-6">
+                  {[
+                    "Flexible work arrangements and remote work options",
+                    "Casual dress code and relaxed atmosphere",
+                    "Fully stocked pantry and complimentary lunches",
+                    "Game room and recreational facilities",
+                    "Paid volunteering time off",
+                    "Team outings and regular social events"
+                  ].map((perk, index) => (
+                    <div key={index} className="flex items-start mb-4">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center mt-1 mr-3 ${
+                        theme === 'light' ? 'bg-green-100 text-green-600' : 'bg-green-900/30 text-green-400'
+                      }`}>
+                        <Check size={12} />
+                      </div>
+                      <span>{perk}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Job Openings Section */}
+      <section id="openings" className="py-16 px-4">
+        <div className="container mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className={`text-3xl font-bold mb-6 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+              Current Openings
+            </h2>
+            <p className="text-lg">
+              Explore our current job opportunities and find a role that matches your skills and aspirations. We're always looking for talented individuals to join our team.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="lg:col-span-1">
+              <div className={`rounded-xl overflow-hidden ${
+                theme === 'light' ? 'bg-white border border-gray-100 shadow-sm' : 'bg-gray-800 border border-gray-700'
+              }`}>
+                <h3 className={`text-xl font-bold p-6 border-b ${
+                  theme === 'light' ? 'border-gray-100' : 'border-gray-700'
+                }`}>
+                  Open Positions
+                </h3>
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {jobOpenings.map(job => (
+                    <button
+                      key={job.id}
+                      onClick={() => setActiveJobId(job.id)}
+                      className={`w-full text-left p-6 transition-all ${
+                        activeJobId === job.id
+                          ? theme === 'light'
+                            ? 'bg-green-50'
+                            : 'bg-green-900/20'
+                          : ''
+                      }`}
+                    >
+                      <h4 className={`font-semibold ${
+                        activeJobId === job.id
+                          ? theme === 'light' ? 'text-green-700' : 'text-green-400'
+                          : theme === 'light' ? 'text-gray-900' : 'text-white'
+                      }`}>
+                        {job.title}
+                      </h4>
+                      <div className="flex flex-wrap mt-2 gap-y-2">
+                        <div className="flex items-center text-sm mr-4">
+                          <MapPin size={14} className="mr-1 text-gray-500" />
+                          <span>{job.location}</span>
+                        </div>
+                        <div className="flex items-center text-sm mr-4">
+                          <DollarSign size={14} className="mr-1 text-gray-500" />
+                          <span>{job.department}</span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <Clock size={14} className="mr-1 text-gray-500" />
+                          <span>{job.experience}</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="lg:col-span-2">
+              <div className={`rounded-xl overflow-hidden ${
+                theme === 'light' ? 'bg-white border border-gray-100 shadow-sm' : 'bg-gray-800 border border-gray-700'
+              }`}>
+                <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                  <h3 className={`text-2xl font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                    {activeJob.title}
+                  </h3>
+                  <div className="flex flex-wrap mt-3 gap-y-2">
+                    <div className={`px-3 py-1 rounded-full text-xs font-medium mr-2 ${
+                      theme === 'light' ? 'bg-green-100 text-green-700' : 'bg-green-900/30 text-green-400'
+                    }`}>
+                      {activeJob.type}
+                    </div>
+                    <div className="flex items-center text-sm mr-4">
+                      <MapPin size={14} className="mr-1 text-gray-500" />
+                      <span>{activeJob.location}</span>
+                    </div>
+                    <div className="flex items-center text-sm mr-4">
+                      <DollarSign size={14} className="mr-1 text-gray-500" />
+                      <span>{activeJob.department}</span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Clock size={14} className="mr-1 text-gray-500" />
+                      <span>{activeJob.experience}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-6">
+                  <p className="mb-6">
+                    {activeJob.description}
+                  </p>
+                  
+                  <h4 className={`text-lg font-semibold mb-3 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                    Responsibilities:
+                  </h4>
+                  <ul className="list-disc pl-5 mb-6 space-y-2">
+                    {activeJob.responsibilities.map((responsibility, index) => (
+                      <li key={index}>{responsibility}</li>
+                    ))}
+                  </ul>
+                  
+                  <h4 className={`text-lg font-semibold mb-3 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                    Requirements:
+                  </h4>
+                  <ul className="list-disc pl-5 mb-6 space-y-2">
+                    {activeJob.requirements.map((requirement, index) => (
+                      <li key={index}>{requirement}</li>
+                    ))}
+                  </ul>
+                  
+                  <a href="#apply" className={`inline-block py-3 px-8 rounded-lg font-medium transition-all ${
+                    theme === 'light' 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-green-700 text-white hover:bg-green-600'
+                  }`}>
+                    Apply for this Position
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Application Form Section */}
+      <section id="apply" className={`py-16 px-4 ${
+        theme === 'light' ? 'bg-green-50' : 'bg-green-900/20'
+      }`}>
+        <div className="container mx-auto">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className={`text-3xl font-bold mb-6 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                Apply Now
+              </h2>
+              <p className="text-lg">
+                Ready to take the next step in your career? Fill out the form below to apply for one of our open positions, or submit a general application.
+              </p>
+            </div>
+            
+            <div className={`rounded-xl overflow-hidden ${
+              theme === 'light' ? 'bg-white border border-gray-100 shadow-lg' : 'bg-gray-800 border border-gray-700'
+            }`}>
+              <form onSubmit={handleSubmit} className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Full Name*
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      className={`w-full px-4 py-3 rounded-lg ${
+                        theme === 'light' 
+                          ? 'bg-gray-50 border border-gray-200' 
+                          : 'bg-gray-700 border border-gray-600'
+                      } ${errors.name ? 'border-red-500' : ''}`}
+                      placeholder="Your full name"
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-500 flex items-center">
+                        <AlertCircle size={14} className="mr-1" /> {errors.name}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Email Address*
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className={`w-full px-4 py-3 rounded-lg ${
+                        theme === 'light' 
+                          ? 'bg-gray-50 border border-gray-200' 
+                          : 'bg-gray-700 border border-gray-600'
+                      } ${errors.email ? 'border-red-500' : ''}`}
+                      placeholder="your.email@example.com"
+                    />
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-500 flex items-center">
+                        <AlertCircle size={14} className="mr-1" /> {errors.email}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 rounded-lg ${
+                        theme === 'light' 
+                          ? 'bg-gray-50 border border-gray-200' 
+                          : 'bg-gray-700 border border-gray-600'
+                      }`}
+                      placeholder="Your phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Position Applying For*
+                    </label>
+                    <select
+                      name="position"
+                      value={formData.position}
+                      onChange={handleInputChange}
+                      required
+                      className={`w-full px-4 py-3 rounded-lg ${
+                        theme === 'light' 
+                          ? 'bg-gray-50 border border-gray-200' 
+                          : 'bg-gray-700 border border-gray-600'
+                      }`}
+                    >
+                      <option value="">Select a position</option>
+                      {jobOpenings.map(job => (
+                        <option key={job.id} value={job.title}>{job.title}</option>
+                      ))}
+                      <option value="General Application">General Application</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Years of Experience*
+                    </label>
+                    <input
+                      type="text"
+                      name="experience"
+                      value={formData.experience}
+                      onChange={handleInputChange}
+                      required
+                      className={`w-full px-4 py-3 rounded-lg ${
+                        theme === 'light' 
+                          ? 'bg-gray-50 border border-gray-200' 
+                          : 'bg-gray-700 border border-gray-600'
+                      } ${errors.experience ? 'border-red-500' : ''}`}
+                      placeholder="e.g., 3 years"
+                    />
+                    {errors.experience && (
+                      <p className="mt-1 text-sm text-red-500 flex items-center">
+                        <AlertCircle size={14} className="mr-1" /> {errors.experience}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Resume/CV*
+                    </label>
+                    <input
+                      type="file"
+                      name="resume"
+                      onChange={handleFileChange}
+                      required
+                      accept=".pdf,.doc,.docx"
+                      className={`w-full px-4 py-3 rounded-lg ${
+                        theme === 'light' 
+                          ? 'bg-gray-50 border border-gray-200' 
+                          : 'bg-gray-700 border border-gray-600'
+                      }`}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Accepted formats: PDF, DOC, DOCX (Max 5MB)
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium mb-2">
+                    Cover Letter / Additional Information
+                  </label>
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    rows={5}
+                    className={`w-full px-4 py-3 rounded-lg ${
+                      theme === 'light' 
+                        ? 'bg-gray-50 border border-gray-200' 
+                        : 'bg-gray-700 border border-gray-600'
+                    } ${errors.message ? 'border-red-500' : ''}`}
+                    placeholder="Tell us why you're interested in this position and what makes you a great fit..."
+                  ></textarea>
+                  {errors.message && (
+                    <p className="mt-1 text-sm text-red-500 flex items-center">
+                      <AlertCircle size={14} className="mr-1" /> {errors.message}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Success Message */}
+                {submitSuccess && (
+                  <div className={`mb-6 p-4 rounded-lg flex items-start ${
+                    theme === 'light' 
+                      ? 'bg-green-50 border border-green-200 text-green-700' 
+                      : 'bg-green-900/20 border border-green-800 text-green-400'
+                  }`}>
+                    <Check size={20} className="mr-3 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium">Application Submitted Successfully!</h4>
+                      <p className="text-sm mt-1">
+                        Thank you for your interest in joining DSR Group. Our recruitment team will review your application and contact you shortly.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className={`py-3 px-8 rounded-lg font-medium transition-all flex items-center ${
+                    theme === 'light' 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-green-700 text-white hover:bg-green-600'
+                  } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Application'} 
+                  {!isSubmitting && <Send size={18} className="ml-2" />}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className={`text-3xl font-bold mb-6 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+              What Our Team Says
+            </h2>
+            <p className="text-lg">
+              Hear from our employees about their experience working at DSR Group and what makes our company a great place to build a career.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                quote: "Joining DSR Group was one of the best decisions of my career. The supportive environment and opportunities for growth have helped me develop both professionally and personally.",
+                name: "Aditya Sharma",
+                role: "Senior Research Analyst",
+                years: "4 years at DSR Group"
+              },
+              {
+                quote: "What I love most about working here is the culture of innovation. We're encouraged to bring new ideas and approaches to the table, which makes every day exciting and engaging.",
+                name: "Priya Joshi",
+                role: "Technology Lead",
+                years: "3 years at DSR Group"
+              },
+              {
+                quote: "The collaborative atmosphere and emphasis on continuous learning make DSR Group stand out. I've been able to expand my knowledge and skills far beyond what I initially expected.",
+                name: "Vikram Mehta",
+                role: "Derivatives Trader",
+                years: "2 years at DSR Group"
+              }
+            ].map((testimonial, index) => (
+              <div key={index} className={`p-6 rounded-xl ${
+                theme === 'light' 
+                  ? 'bg-white border border-gray-100 shadow-sm' 
+                  : 'bg-gray-800 border border-gray-700'
+              }`}>
+                <div className="mb-4">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <span key={star} className="text-yellow-400">★</span>
+                  ))}
+                </div>
+                <p className="mb-6 italic">
+                  "{testimonial.quote}"
+                </p>
+                <div className={`pt-4 border-t ${
+                  theme === 'light' ? 'border-gray-100' : 'border-gray-700'
+                }`}>
+                  <h4 className={`font-semibold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                    {testimonial.name}
+                  </h4>
+                  <p className="text-sm">
+                    {testimonial.role}
+                  </p>
+                  <p className={`text-xs mt-1 ${
+                    theme === 'light' ? 'text-gray-500' : 'text-gray-400'
+                  }`}>
+                    {testimonial.years}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className={`py-20 px-4 ${
+        theme === 'light' 
+          ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white' 
+          : 'bg-gradient-to-r from-green-900 to-emerald-900 text-white'
+      }`}>
+        <div className="container mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Ready to Join Our Team?
+          </h2>
+          <p className="text-lg md:text-xl mb-10 max-w-3xl mx-auto">
+            Explore our open positions and take the next step in your career. We're looking forward to meeting talented individuals like you.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <a href="#openings" className="py-3 px-8 rounded-lg font-medium transition-all bg-white text-green-700 hover:bg-gray-100">
+              View Open Positions
+            </a>
+            <Link href="/contact" className="py-3 px-8 rounded-lg font-medium transition-all bg-transparent text-white border border-white hover:bg-white/10">
+              Contact Recruitment Team
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  )
+} 

@@ -412,12 +412,12 @@ export function NavBar() {
           {/* Mobile Navigation Links */}
           <div className="flex flex-col space-y-2">
             {[
-              { href: "/", icon: Home, label: "Home" },
-              { href: "/stocks", icon: LineChart, label: "Stocks" },
-              { href: "/mutual-funds", icon: Briefcase, label: "Mutual Funds" },
-              { href: "/ipo", icon: TrendingUp, label: "IPO" },
-              { href: "/about-us", icon: Building, label: "About Us" },
-              { href: "/contact-us", icon: Mail, label: "Contact Us" }
+          { href: "/", icon: Home, label: "Home" },
+          { href: "/stocks", icon: LineChart, label: "Stocks" },
+          { href: "/#mutual-funds", icon: Briefcase, label: "Mutual Funds" },
+          { href: "/products/ipo", icon: TrendingUp, label: "IPO" },
+          { href: "/about", icon: Building, label: "About Us" },
+          { href: "/contact", icon: Mail, label: "Contact Us" }
             ].map((item, index) => (
               <Link href={item.href} key={index}>
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg

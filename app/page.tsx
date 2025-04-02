@@ -5,7 +5,7 @@ import { NavBar } from '@/components/nav-bar'
 import { Footer } from '@/components/footer'
 import { motion, useAnimation } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { IndianStocks } from '@/components/indian-stocks'
+import IndianStocks from '@/components/indian-stocks'
 import { MutualFundsSection } from '@/components/mutual-funds-section'
 import { CharterAccountSection } from '@/components/charter-account-section'
 import { ThemeWrapper } from '@/components/theme-wrapper'
@@ -174,23 +174,8 @@ export default function HomePage() {
           {/* Section 1: Top Indian Stocks */}
           <IndianStocks />
           
-          {/* Section 2: Mutual Funds with staggered reveal */}
-          <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            viewport={{ once: true, margin: "-100px" }}
-            className={`rounded-2xl overflow-hidden ${
-              theme === 'light' ? 'bg-white shadow-lg' : 'bg-gray-900 shadow-xl shadow-gray-800/30'
-            }`}
-          >
-            <section id="mutual-funds">
-              <h2>Discover Mutual Funds</h2>
-              <MutualFundsSection />
-            </section>
-          </motion.div>
-          
-
+          {/* Section 2: Mutual Funds */}
+          <MutualFundsSection />
           
           {/* Section 4: Charter Account Section with fade in */}
           <motion.div

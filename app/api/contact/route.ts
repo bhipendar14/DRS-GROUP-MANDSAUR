@@ -1,94 +1,73 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { name, phone, email, queryType, message } = await request.json();
-
-    // Validate required fields
-    if (!name || !phone || !email || !queryType) {
+    const { name, phone, email, queryType, message } = await req.json();
+    
+    // Input validation
+    if (!name || !email || !phone || !queryType) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Name, email, phone and query type are required' }, 
         { status: 400 }
       );
     }
-
-    // Create a transporter
+    
+    // Configure transport
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
+        pass: process.env.EMAIL_PASSWORD
+      }
     });
-
-    // Add verification
-    try {
-      await transporter.verify();
-    } catch (error: any) {
-      console.error('Email verification failed:', error);
-      return NextResponse.json(
-        { error: `Email configuration error: ${error?.message || 'Unknown error'}` },
-        { status: 500 }
-      );
-    }
-
-    // Prepare email content for recipient (DSR Group)
-    const mailOptionsToRecipient = {
+    
+    // Email content
+    const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: 'bhipendarkumar31@gmail.com',
-      subject: `DSR Group Contact Form: ${queryType} Query`,
+      to: process.env.EMAIL_USER,
+      subject: `New Contact Message from ${name} - ${queryType}`,
       html: `
-        <h1>New Contact Form Submission</h1>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Query Type:</strong> ${queryType}</p>
-        <p><strong>Message:</strong> ${message || 'No message provided'}</p>
-      `,
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+          <h2 style="color: #2563eb; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px;">New Contact Form Submission</h2>
+          
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold; width: 30%;">Full Name:</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6;">${name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold;">Phone Number:</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6;">${phone}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold;">Email Address:</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6;">${email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold;">Query Type:</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6;">${queryType}</td>
+            </tr>
+            ${message ? `
+            <tr>
+              <td style="padding: 10px 0; vertical-align: top; font-weight: bold;">Message:</td>
+              <td style="padding: 10px 0;">${message.replace(/\n/g, '<br>')}</td>
+            </tr>` : ''}
+          </table>
+          
+          <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">This message was sent from the DSR GROUP MANDSAUR contact form.</p>
+        </div>
+      `
     };
-
-    // Prepare confirmation email for sender
-    const mailOptionsToSender = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Thank you for contacting DSR Group',
-      html: `
-        <h1>Thank you for contacting DSR Group</h1>
-        <p>Dear ${name},</p>
-        <p>We have received your ${queryType} query and will get back to you shortly.</p>
-        <p>Here's what you submitted:</p>
-        <p><strong>Query Type:</strong> ${queryType}</p>
-        <p><strong>Message:</strong> ${message || 'No message provided'}</p>
-        <br>
-        <p>If you have any additional questions, please click here to email us directly: 
-          <a href="mailto:bhipendarkumar31@gmail.com?subject=RE: ${queryType} Query">Send Email</a>
-        </p>
-        <br>
-        <p>Best regards,</p>
-        <p>DSR Group Team</p>
-      `,
-    };
-
-    // Send both emails with better error handling
-    try {
-      const results = await Promise.all([
-        transporter.sendMail(mailOptionsToRecipient),
-        transporter.sendMail(mailOptionsToSender)
-      ]);
-      console.log('Email sent successfully:', results);
-      return NextResponse.json({ success: true });
-    } catch (error: any) {
-      console.error('Failed to send email, detailed error:', error);
-      return NextResponse.json(
-        { error: `Failed to send email: ${error?.message || 'Unknown error'}` },
-        { status: 500 }
-      );
-    }
+    
+    // Send email
+    await transporter.sendMail(mailOptions);
+    
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('Error sending email:', error);
     return NextResponse.json(
-      { error: 'Failed to send email' },
+      { error: 'Failed to send message' }, 
       { status: 500 }
     );
   }

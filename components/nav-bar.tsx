@@ -317,7 +317,7 @@ export function NavBar() {
       >
         <Link href="/" className="flex items-center space-x-2.5">
           <Image 
-            src="/logo.png" 
+            src="/logo.jpg" 
             alt="DSR Group Logo" 
             width={44} 
             height={44}

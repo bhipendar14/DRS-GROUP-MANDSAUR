@@ -1,4 +1,3 @@
-import { BitcoinChart } from "./bitcoin-chart"
 import { AccountInfo } from "./account-info"
 import { Play, ArrowRight, Layers, Search, Plus, Send, Pencil, Clock, CheckCircle, MoreVertical } from "lucide-react"
 
@@ -97,10 +96,6 @@ export function DashboardPreview() {
           {/* Main Content */}
           <div className="flex-1 p-3">
             <div className="flex gap-4 h-[200px]">
-              {/* Chart */}
-              <div className="flex-1 bg-gray-800/50 rounded-md overflow-hidden">
-                <BitcoinChart />
-              </div>
 
               {/* Account Info */}
               <div className="w-[250px] bg-gray-800/50 rounded-md overflow-hidden">

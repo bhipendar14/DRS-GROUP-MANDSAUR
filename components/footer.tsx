@@ -18,7 +18,7 @@ export function Footer() {
           <div>
             <Link href="/" className="inline-block mb-6">
               <Image
-                src="/logo.png"
+                src="/logo.jpg"
                 alt="DSR Group Logo"
                 width={140}
                 height={42}
@@ -117,7 +117,7 @@ export function Footer() {
             <h3 className={`text-sm font-semibold mb-6 uppercase tracking-wider ${
               theme === 'light' ? 'text-gray-800' : 'text-gray-300'
             }`}>
-              DSR Group MANDSAUR
+              DSR GROUP MANDSAUR
             </h3>
             <ul className="space-y-3">
               {[
@@ -189,7 +189,7 @@ export function Footer() {
                 Regulatory
               </h4>
               <p className="text-xs mb-4">
-                DSR Group MANDSAUR™ is a registered stock broker with SEBI, NSE, BSE and MCX. Securities and investment advisory 
+                DSR GROUP MANDSAUR™ is a registered stock broker with SEBI, NSE, BSE and MCX. Securities and investment advisory 
                 services are offered through DSR Securities Pvt. Ltd. (SEBI Registration No: INZ000012345).
               </p>
               <p className="text-xs mb-2">
@@ -221,7 +221,7 @@ export function Footer() {
           }`}>
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-xs mb-4 md:mb-0">
-                © {new Date().getFullYear()} DSR Group MANDSAUR™. All rights reserved.
+                © {new Date().getFullYear()} DSR GROUP MANDSAUR™. All rights reserved.
               </p>
               
               <div className="flex flex-wrap gap-6">

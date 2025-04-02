@@ -18,7 +18,7 @@ export default function CookiePolicyPage() {
       const sections = document.querySelectorAll('section[id]')
       
       sections.forEach(section => {
-        const sectionTop = section.offsetTop - 100
+        const sectionTop = (section as HTMLElement).offsetTop - 100
         const sectionId = section.getAttribute('id')
         
         if (window.scrollY >= sectionTop) {
@@ -62,7 +62,7 @@ export default function CookiePolicyPage() {
           <div className="flex justify-center mb-6">
             <div className="relative w-48 h-24">
               <Image 
-                src="/logo.png" 
+                src="/logo.jpg" 
                 alt="DSR Group Logo" 
                 fill
                 style={{ objectFit: 'contain' }}

@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer"
 import { ChevronRight, Award, Coffee, Heart, Clock, MapPin, DollarSign, Zap, Calendar, Globe, Check, Smile, Send, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 export default function CareersPage() {
   const { theme } = useTheme()
@@ -17,157 +17,102 @@ export default function CareersPage() {
     phone: "",
     position: "",
     experience: "",
-    resume: null as File | null,
-    message: ""
+    coverLetter: ""
   })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [status, setStatus] = useState({
+    loading: false,
+    success: false,
+    error: ""
+  })
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters"
+  // Auto-dismiss success message after 8 seconds
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (status.success) {
+      timer = setTimeout(() => {
+        setStatus(prev => ({ ...prev, success: false }))
+      }, 8000)
     }
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!formData.email) {
-      newErrors.email = "Email is required"
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
-    }
-    
-    // Phone validation
-    const phoneRegex = /^[0-9]{10}$/
-    if (!formData.phone) {
-      newErrors.phone = "Phone number is required"
-    } else if (!phoneRegex.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid 10-digit phone number"
-    }
-    
-    // Position validation
-    if (!formData.position) {
-      newErrors.position = "Please select a position"
-    }
-    
-    // Experience validation
-    if (!formData.experience) {
-      newErrors.experience = "Years of experience is required"
-    }
-    
-    // Resume validation
-    if (!formData.resume) {
-      newErrors.resume = "Resume is required"
-    } else {
-      const fileSize = formData.resume.size / 1024 / 1024 // in MB
-      const fileType = formData.resume.type
-      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-      
-      if (fileSize > 5) {
-        newErrors.resume = "File size must be less than 5MB"
-      } else if (!validTypes.includes(fileType)) {
-        newErrors.resume = "Only PDF, DOC, or DOCX files are accepted"
-      }
-    }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    return () => clearTimeout(timer)
+  }, [status.success])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
-      [name]: value
+      [e.target.name]: e.target.value
     })
-    
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ""
-      })
-    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData({
-        ...formData,
-        resume: e.target.files[0]
-      })
-      
-      // Clear error when user selects a file
-      if (errors.resume) {
-        setErrors({
-          ...errors,
-          resume: ""
+      const file = e.target.files[0]
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setStatus({
+          loading: false,
+          success: false,
+          error: "File size exceeds 5MB limit"
         })
+        // Reset file input
+        if (fileInputRef.current) fileInputRef.current.value = ""
+        return
       }
+      setResumeFile(file)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setStatus({ loading: true, success: false, error: "" })
     
-    // Validate form before submission
-    if (!validateForm()) {
+    if (!resumeFile) {
+      setStatus({
+        loading: false,
+        success: false,
+        error: "Please upload your resume"
+      })
       return
     }
     
-    setIsSubmitting(true)
-    
     try {
       // Create FormData for file upload
-      const submissionData = new FormData()
-      submissionData.append('name', formData.name)
-      submissionData.append('email', formData.email)
-      submissionData.append('phone', formData.phone)
-      submissionData.append('position', formData.position)
-      submissionData.append('experience', formData.experience)
-      submissionData.append('message', formData.message)
-      if (formData.resume) {
-        submissionData.append('resume', formData.resume)
-      }
+      const formDataToSend = new FormData()
+      formDataToSend.append("name", formData.name)
+      formDataToSend.append("email", formData.email)
+      formDataToSend.append("phone", formData.phone)
+      formDataToSend.append("position", formData.position)
+      formDataToSend.append("experience", formData.experience)
+      formDataToSend.append("coverLetter", formData.coverLetter)
+      formDataToSend.append("resume", resumeFile)
       
-      // Send to API endpoint
-      const response = await fetch('/api/submit-application', {
-        method: 'POST',
-        body: submissionData
+      const response = await fetch("/api/careers", {
+        method: "POST",
+        body: formDataToSend
       })
       
-      if (response.ok) {
-        // Show success message
-        setSubmitSuccess(true)
-        
-        // Reset form after success
-        setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          position: "",
-          experience: "",
-          resume: null,
-          message: ""
-        })
-        
-        // Hide success message after 5 seconds
-        setTimeout(() => {
-          setSubmitSuccess(false)
-        }, 5000)
-      } else {
-        throw new Error('Failed to submit application')
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Something went wrong")
       }
+      
+      setStatus({ loading: false, success: true, error: "" })
+      setFormData({ name: "", email: "", phone: "", position: "", experience: "", coverLetter: "" })
+      setResumeFile(null)
+      
+      // Reset file input
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      
+      // Scroll to the success message
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } catch (error) {
-      console.error('Error submitting application:', error)
-      alert('There was an error submitting your application. Please try again later.')
-    } finally {
-      setIsSubmitting(false)
+      console.error("Application submission error:", error)
+      setStatus({ 
+        loading: false, 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to submit application" 
+      })
     }
   }
 
@@ -624,10 +569,44 @@ export default function CareersPage() {
               </p>
             </div>
             
+            {/* Success Message */}
+            {status.success && (
+              <div className={`mb-6 p-4 rounded-lg flex items-start ${
+                theme === 'light' 
+                  ? 'bg-green-50 border border-green-200 text-green-700' 
+                  : 'bg-green-900/20 border border-green-800 text-green-400'
+              }`}>
+                <Check size={20} className="mr-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium">Application Submitted Successfully!</h4>
+                  <p className="text-sm mt-1">
+                    Thank you for your interest in joining DSR Group. Our recruitment team will review your application and contact you shortly.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Error Message */}
+            {status.error && (
+              <div className={`mb-6 p-4 rounded-lg flex items-start ${
+                theme === 'light' 
+                  ? 'bg-red-50 border border-red-200 text-red-700' 
+                  : 'bg-red-900/20 border border-red-800 text-red-400'
+              }`}>
+                <AlertCircle size={20} className="mr-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium">Application Submission Error</h4>
+                  <p className="text-sm mt-1">
+                    {status.error}
+                  </p>
+                </div>
+              </div>
+            )}
+            
             <div className={`rounded-xl overflow-hidden ${
               theme === 'light' ? 'bg-white border border-gray-100 shadow-lg' : 'bg-gray-800 border border-gray-700'
             }`}>
-              <form onSubmit={handleSubmit} className="p-8">
+              <form onSubmit={handleSubmit} className="p-8" encType="multipart/form-data">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-sm font-medium mb-2">
@@ -637,20 +616,15 @@ export default function CareersPage() {
                       type="text"
                       name="name"
                       value={formData.name}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
                       required
                       className={`w-full px-4 py-3 rounded-lg ${
                         theme === 'light' 
                           ? 'bg-gray-50 border border-gray-200' 
                           : 'bg-gray-700 border border-gray-600'
-                      } ${errors.name ? 'border-red-500' : ''}`}
+                      }`}
                       placeholder="Your full name"
                     />
-                    {errors.name && (
-                      <p className="mt-1 text-sm text-red-500 flex items-center">
-                        <AlertCircle size={14} className="mr-1" /> {errors.name}
-                      </p>
-                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
@@ -660,20 +634,15 @@ export default function CareersPage() {
                       type="email"
                       name="email"
                       value={formData.email}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
                       required
                       className={`w-full px-4 py-3 rounded-lg ${
                         theme === 'light' 
                           ? 'bg-gray-50 border border-gray-200' 
                           : 'bg-gray-700 border border-gray-600'
-                      } ${errors.email ? 'border-red-500' : ''}`}
+                      }`}
                       placeholder="your.email@example.com"
                     />
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-red-500 flex items-center">
-                        <AlertCircle size={14} className="mr-1" /> {errors.email}
-                      </p>
-                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
@@ -683,7 +652,7 @@ export default function CareersPage() {
                       type="tel"
                       name="phone"
                       value={formData.phone}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-lg ${
                         theme === 'light' 
                           ? 'bg-gray-50 border border-gray-200' 
@@ -699,7 +668,7 @@ export default function CareersPage() {
                     <select
                       name="position"
                       value={formData.position}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
                       required
                       className={`w-full px-4 py-3 rounded-lg ${
                         theme === 'light' 
@@ -722,20 +691,15 @@ export default function CareersPage() {
                       type="text"
                       name="experience"
                       value={formData.experience}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
                       required
                       className={`w-full px-4 py-3 rounded-lg ${
                         theme === 'light' 
                           ? 'bg-gray-50 border border-gray-200' 
                           : 'bg-gray-700 border border-gray-600'
-                      } ${errors.experience ? 'border-red-500' : ''}`}
+                      }`}
                       placeholder="e.g., 3 years"
                     />
-                    {errors.experience && (
-                      <p className="mt-1 text-sm text-red-500 flex items-center">
-                        <AlertCircle size={14} className="mr-1" /> {errors.experience}
-                      </p>
-                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
@@ -744,9 +708,10 @@ export default function CareersPage() {
                     <input
                       type="file"
                       name="resume"
+                      ref={fileInputRef}
+                      accept=".pdf,.doc,.docx"
                       onChange={handleFileChange}
                       required
-                      accept=".pdf,.doc,.docx"
                       className={`w-full px-4 py-3 rounded-lg ${
                         theme === 'light' 
                           ? 'bg-gray-50 border border-gray-200' 
@@ -764,52 +729,38 @@ export default function CareersPage() {
                     Cover Letter / Additional Information
                   </label>
                   <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
+                    name="coverLetter"
+                    value={formData.coverLetter}
+                    onChange={handleChange}
                     rows={5}
                     className={`w-full px-4 py-3 rounded-lg ${
                       theme === 'light' 
                         ? 'bg-gray-50 border border-gray-200' 
                         : 'bg-gray-700 border border-gray-600'
-                    } ${errors.message ? 'border-red-500' : ''}`}
+                    }`}
                     placeholder="Tell us why you're interested in this position and what makes you a great fit..."
                   ></textarea>
-                  {errors.message && (
-                    <p className="mt-1 text-sm text-red-500 flex items-center">
-                      <AlertCircle size={14} className="mr-1" /> {errors.message}
-                    </p>
-                  )}
                 </div>
-                
-                {/* Success Message */}
-                {submitSuccess && (
-                  <div className={`mb-6 p-4 rounded-lg flex items-start ${
-                    theme === 'light' 
-                      ? 'bg-green-50 border border-green-200 text-green-700' 
-                      : 'bg-green-900/20 border border-green-800 text-green-400'
-                  }`}>
-                    <Check size={20} className="mr-3 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-medium">Application Submitted Successfully!</h4>
-                      <p className="text-sm mt-1">
-                        Thank you for your interest in joining DSR Group. Our recruitment team will review your application and contact you shortly.
-                      </p>
-                    </div>
-                  </div>
-                )}
                 
                 <button 
                   type="submit" 
-                  disabled={isSubmitting}
+                  disabled={status.loading}
                   className={`py-3 px-8 rounded-lg font-medium transition-all flex items-center ${
                     theme === 'light' 
                       ? 'bg-green-600 text-white hover:bg-green-700' 
                       : 'bg-green-700 text-white hover:bg-green-600'
-                  } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  } ${status.loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Application'} 
-                  {!isSubmitting && <Send size={18} className="ml-2" />}
+                  {status.loading ? 
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Submitting...
+                    </span>
+                    : 'Submit Application'
+                  }
                 </button>
               </form>
             </div>

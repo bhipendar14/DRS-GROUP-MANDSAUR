@@ -12,11 +12,11 @@ export const metadata: Metadata = {
   description: "Financial analytics and payment performance solutions",
   icons: {
     icon: [
-      { url: '/logo.png' },
-      { url: '/logo.png', sizes: '32x32' }
+      { url: '/logo.jpg' },
+      { url: '/logo.jpg', sizes: '32x32' }
     ],
-    apple: { url: '/logo.png' },
-    shortcut: { url: '/logo.png' }
+    apple: { url: '/logo.jpg' },
+    shortcut: { url: '/logo.jpg' }
   },
   generator: 'v0.dev'
 }

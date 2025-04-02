@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, FormEvent, useRef } from 'react'
+import { useState, FormEvent, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { NavBar } from '@/components/nav-bar'
 import { Footer } from '@/components/footer'
@@ -18,10 +18,23 @@ export default function ContactPage() {
     message: ''
   })
   
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [error, setError] = useState('')
+  const [status, setStatus] = useState({
+    loading: false,
+    success: false,
+    error: ''
+  })
+  
   const formRef = useRef<HTMLFormElement>(null)
+  
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (status.success) {
+      timer = setTimeout(() => {
+        setStatus(prev => ({ ...prev, success: false }))
+      }, 8000)
+    }
+    return () => clearTimeout(timer)
+  }, [status.success])
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -36,30 +49,32 @@ export default function ContactPage() {
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setStatus({ loading: true, success: false, error: '' })
     
     // Validate form
     if (!formData.name || !formData.phone || !formData.email || !formData.queryType) {
-      setError('Please fill all required fields')
+      setStatus({ loading: false, success: false, error: 'Please fill all required fields' })
       return
     }
     
     if (!validateEmail(formData.email)) {
-      setError('Please enter a valid email address')
+      setStatus({ loading: false, success: false, error: 'Please enter a valid email address' })
       return
     }
     
-    setError('')
-    setIsSubmitting(true)
-    
     try {
-      // For now, we'll simulate sending an email
-      // In a real application, you would call your API endpoint here
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
       
-      // For testing, log the data that would be sent to bhipendarkumar31@gmail.com
-      console.log('Sending email to bhipendarkumar31@gmail.com:', formData)
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Something went wrong')
+      }
       
-      setIsSubmitted(true)
+      setStatus({ loading: false, success: true, error: '' })
       formRef.current?.reset()
       setFormData({
         name: '',
@@ -69,15 +84,16 @@ export default function ContactPage() {
         message: ''
       })
       
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setIsSubmitted(false)
-      }, 5000)
-    } catch (err) {
-      console.error('Error sending email:', err)
-      setError('Failed to send your message. Please try again.')
-    } finally {
-      setIsSubmitting(false)
+      console.log('Form submitted successfully, success state:', true)
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (error) {
+      console.error('Form submission error:', error)
+      setStatus({ 
+        loading: false, 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send message' 
+      })
     }
   }
   
@@ -208,143 +224,149 @@ export default function ContactPage() {
                 theme === 'light' ? 'text-gray-800' : 'text-gray-100'
               }`}>Send us a Message</h2>
               
-              {isSubmitted ? (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-green-50 border border-green-200 rounded-xl p-6 text-center"
-                >
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-xl font-medium text-gray-800 mb-2">Message Sent Successfully!</h3>
-                  <p className="text-gray-600">Thank you for contacting us. We'll get back to you soon.</p>
-                </motion.div>
-              ) : (
-                <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-                  {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm">
-                      {error}
+              {status.success && (
+                <div className="mb-8 rounded-lg bg-green-100 dark:bg-green-900/50 p-5 border-l-4 border-green-500 shadow-md">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <svg className="h-6 w-6 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
                     </div>
-                  )}
-                  
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg ${
-                        theme === 'light'
-                          ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
-                          : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
-                      } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                      placeholder="Your name"
-                      required
-                    />
+                    <div className="ml-3">
+                      <p className="text-base font-semibold text-green-800 dark:text-green-200">
+                        Success! Your message has been sent successfully.
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                        We'll get back to you as soon as possible.
+                      </p>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg ${
-                        theme === 'light'
-                          ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
-                          : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
-                      } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                      placeholder="Your phone number"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg ${
-                        theme === 'light'
-                          ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
-                          : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
-                      } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                      placeholder="Your email address"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="queryType" className="block text-sm font-medium text-gray-700 mb-1">Query Type *</label>
-                    <select
-                      id="queryType"
-                      name="queryType"
-                      value={formData.queryType}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg ${
-                        theme === 'light'
-                          ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
-                          : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                      required
-                    >
-                      <option value="">Select a query type</option>
-                      <option value="Stock">Stock</option>
-                      <option value="Loan">Loan</option>
-                      <option value="Income Tax">Income Tax</option>
-                      <option value="GST Services">GST Services</option>
-                      <option value="RERA">RERA</option>
-                      <option value="Audit & Assurance">Audit & Assurance</option>
-                      <option value="Mutual Funds">Mutual Funds</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message (Optional)</label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      rows={4}
-                      className={`w-full px-4 py-3 rounded-lg ${
-                        theme === 'light'
-                          ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
-                          : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
-                      } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
-                    ></textarea>
-                  </div>
-                  
-                  <motion.button
-                    type="submit"
-                    disabled={isSubmitting}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-lg flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/20 transition-all disabled:opacity-70"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-5 h-5 mr-2" />
-                        Submit Message
-                      </>
-                    )}
-                  </motion.button>
-                </form>
+                </div>
               )}
+              
+              <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+                {status.error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm">
+                    {status.error}
+                  </div>
+                )}
+                
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 rounded-lg ${
+                      theme === 'light'
+                        ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+                        : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
+                    } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                    placeholder="Your name"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 rounded-lg ${
+                      theme === 'light'
+                        ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+                        : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
+                    } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                    placeholder="Your phone number"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 rounded-lg ${
+                      theme === 'light'
+                        ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+                        : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
+                    } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                    placeholder="Your email address"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="queryType" className="block text-sm font-medium text-gray-700 mb-1">Query Type *</label>
+                  <select
+                    id="queryType"
+                    name="queryType"
+                    value={formData.queryType}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 rounded-lg ${
+                      theme === 'light'
+                        ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+                        : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
+                    } focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                    required
+                  >
+                    <option value="">Select a query type</option>
+                    <option value="Stock">Stock</option>
+                    <option value="Loan">Loan</option>
+                    <option value="Income Tax">Income Tax</option>
+                    <option value="GST Services">GST Services</option>
+                    <option value="RERA">RERA</option>
+                    <option value="Audit & Assurance">Audit & Assurance</option>
+                    <option value="Mutual Funds">Mutual Funds</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message (Optional)</label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    rows={4}
+                    className={`w-full px-4 py-3 rounded-lg ${
+                      theme === 'light'
+                        ? 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+                        : 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
+                    } border focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                  ></textarea>
+                </div>
+                
+                <motion.button
+                  type="submit"
+                  disabled={status.loading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-lg flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/20 transition-all disabled:opacity-70"
+                >
+                  {status.loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5 mr-2" />
+                      Submit Message
+                    </>
+                  )}
+                </motion.button>
+              </form>
             </div>
           </motion.div>
         </div>

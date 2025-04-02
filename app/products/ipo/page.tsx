@@ -25,7 +25,7 @@ export default function IPOPage() {
               Invest in companies at their early public stage and be part of their growth journey. Apply for IPOs seamlessly with DSR Group.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/open-account" className={`py-3 px-8 rounded-lg font-medium transition-all ${
+              <Link href="/open-demat-account" className={`py-3 px-8 rounded-lg font-medium transition-all ${
                 theme === 'light' 
                   ? 'bg-purple-600 text-white hover:bg-purple-700' 
                   : 'bg-purple-700 text-white hover:bg-purple-600'
@@ -331,7 +331,7 @@ export default function IPOPage() {
                   </ul>
                   
                   <div className="mt-8">
-                    <Link href="/open-account" className={`inline-block py-3 px-6 rounded-lg font-medium transition-all ${
+                    <Link href="/open-demat-account" className={`inline-block py-3 px-6 rounded-lg font-medium transition-all ${
                       theme === 'light' 
                         ? 'bg-purple-600 text-white hover:bg-purple-700' 
                         : 'bg-purple-700 text-white hover:bg-purple-600'
@@ -375,7 +375,7 @@ export default function IPOPage() {
             Open a free demat account today and get access to all upcoming IPOs with expert research and zero application fees.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/open-account" className="py-3 px-8 rounded-lg font-medium transition-all bg-white text-purple-700 hover:bg-gray-100">
+            <Link href="/open-demat-account" className="py-3 px-8 rounded-lg font-medium transition-all bg-white text-purple-700 hover:bg-gray-100">
               Open Demat Account
             </Link>
             <Link href="/contact" className="py-3 px-8 rounded-lg font-medium transition-all bg-transparent text-white border border-white hover:bg-white/10">
